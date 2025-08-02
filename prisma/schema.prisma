@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model products {
+  id       BigInt   @id @default(autoincrement())
+  name     String?
+  brand    String?
+  type     String?
+  link     String?
+  img_link String?
+  price    Decimal? @db.Decimal
+  shades   shades[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model shades {
+  id                   BigInt                 @id @default(autoincrement())
+  product_id           BigInt?
+  name                 String?
+  hex                  String?
+  r                    Int?                   @db.SmallInt
+  g                    Int?                   @db.SmallInt
+  b                    Int?                   @db.SmallInt
+  products             products?              @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user_loadouts        user_loadouts[]
+  user_recommendations user_recommendations[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_loadouts {
+  id                  String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mongo_id            String  @unique
+  name                String?
+  foundation_shade_id BigInt?
+  shades              shades? @relation(fields: [foundation_shade_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_profiles {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mongo_id   String   @unique
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  budget     Int?     @default(0)
+  skin_type  String?
+  is_private Boolean? @default(true)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_recommendations {
+  mongo_id       String    @unique
+  shade_id       BigInt?
+  shade_score    Float?    @db.Real
+  skintype_score Float?    @db.Real
+  created_at     DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shades         shades?   @relation(fields: [shade_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_reccomendations_shade_id_fkey")
+}
